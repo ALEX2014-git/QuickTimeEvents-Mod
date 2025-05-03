@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace QTE
 {
-    public partial class QTE 
+    public partial class QTE
     {
         private void Player_Grabbed(On.Player.orig_Grabbed orig, Player self, Creature.Grasp grasp)
         {
@@ -25,7 +25,7 @@ namespace QTE
             var playerInput = self.input[0];
             if (self.GetCustomData().qtEvent != null)
             {
-                //self.GetCustomData().qtEvent.Update();
+                self.GetCustomData().qtEvent.Update();
             }
             
             orig(self, eu);

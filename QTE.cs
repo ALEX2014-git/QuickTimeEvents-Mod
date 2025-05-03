@@ -26,6 +26,7 @@ using Rewired;
 using UnityEngine.SocialPlatforms;
 using UnityEngine.Rendering;
 using System.Runtime.Serialization;
+using Newtonsoft.Json.Serialization;
 using Steamworks;
 using IL.Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI;
@@ -108,8 +109,6 @@ public partial class QTE : BaseUnityPlugin
             On.Player.DeathByBiteMultiplier += Player_DeathByBiteMultiplier;
             On.Player.ThrowToGetFree += Player_ThrowToGetFree;
             On.Player.DangerGraspPickup += Player_DangerGraspPickup;
-            On.Room.Update += Room_Update;
-            IL.PlayerGraphics.Update += PlayerGraphics_Update;
             
             MachineConnector.SetRegisteredOI("ALEX2014.QTE", options);
 
