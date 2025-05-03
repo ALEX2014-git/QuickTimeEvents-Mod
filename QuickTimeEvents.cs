@@ -15,10 +15,13 @@ using MoreSlugcats;
 using Noise;
 namespace QTE
 {
-    public abstract class QTEvent
+    public class QTEvent
     {
+        public QuickTimeEventsGraphics qteGraphics;
+        public List<QTEAction> requiredSequence;
         public enum QTEState { Active, Won, Lost, None }
-        public Player targetPlayer { get; protected set; }
+        public Player player { get; protected set; }
+        public Room room { get; protected set; }
         public QuickTimeEventsController controller { get; protected set; }
         public QTEState State { get; protected set; } = QTEState.Active;
         public float Timer { get; protected set; }
@@ -49,38 +52,46 @@ namespace QTE
             }
         }
 
-        public QTEvent(Player player, QuickTimeEventsController controller)
+        public QTEvent(QuickTimeEventsController controller, Player player, Room room)
         {
-            this.targetPlayer = player;
+            this.player = player;
+            this.room = room;
             this.controller = controller;
             this.State = QTEState.Active; 
         }
-        public abstract void Update();
+
+        public virtual void Update()
+        {
+        }
+
         public virtual void Destroy()
         {
-            this.targetPlayer = null;
+            this.player = null;
             this.controller = null;
             this.State = QTEState.None;
         }
-        protected abstract void WinCondition();
-        protected abstract void LoseCondition();
-
+        protected virtual void WinCondition()
+        { }
+        protected virtual void LoseCondition()
+        { }
 
     }
 
     public class ButtonSequenceQTE : QTEvent
     {
-        public List<QTEAction> requiredSequence;
         private Player.InputPackage previousInput;
         private int currentStep;
         private int bufferFrames;
 
-        public ButtonSequenceQTE(Player player, QuickTimeEventsController controller) : base(player, controller)
+        public ButtonSequenceQTE(QuickTimeEventsController controller, Player player, Room room) : base(controller, player, room)
         {
             this.GenerateSequence();
             this.isActive = true;
             this.currentStep = 0;
             this.bufferFrames = 5;
+            this.qteGraphics = new QuickTimeEventButtonSequenceGraphic(this, this.player, this.room);
+            QTE.Logger.LogWarning("Created QTEGraphics");
+            this.room.AddObject(this.qteGraphics);
         }
 
         public void GenerateSequence()
@@ -104,10 +115,11 @@ namespace QTE
 
         public override void Update()
         {
+            base.Update();
             if (!isActive) return;
 
-            int playerNumber = targetPlayer.playerState.playerNumber;
-            if (ModManager.MSC && targetPlayer.abstractCreature.world.game.IsArenaSession && targetPlayer.abstractCreature.world.game.GetArenaGameSession.chMeta != null)
+            int playerNumber = player.playerState.playerNumber;
+            if (ModManager.MSC && player.abstractCreature.world.game.IsArenaSession && player.abstractCreature.world.game.GetArenaGameSession.chMeta != null)
             {
                 playerNumber = 0;
             }
@@ -120,8 +132,10 @@ namespace QTE
                     if (IsActionPerformed(expectedKey, playerInput))
                     {
                         QTE.Logger.LogInfo($"Input: x={playerInput.x}, y={playerInput.y}, jmp={playerInput.jmp}, thrw={playerInput.thrw}, pckp={playerInput.pckp}");
-                        bufferFrames = 0;
-                        currentStep++;
+                        //bufferFrames = 0; Don't revoke buffer frames after first succeseful input?
+                        (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).buttons[currentStep].State = QTEKey.KeyState.Completed;
+                        currentStep++;                       
+                        player.room.PlaySound(SoundID.MENU_Karma_Ladder_Increase_Bump, player.firstChunk.pos, 1f, 3f + ((currentStep - 1) / 2f));
                         QTE.Logger.LogInfo($"Correct input! Step: {currentStep}/{requiredSequence.Count}");
                     }
                     else if (playerInput.AnyInput)
@@ -133,6 +147,7 @@ namespace QTE
                         }
                         else
                         {
+                            (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).buttons[currentStep].State = QTEKey.KeyState.Failed;
                             QTE.Logger.LogInfo("Wrong input! QTE failed.");
                             this.LoseCondition();
                         }
@@ -157,12 +172,14 @@ namespace QTE
         protected override void WinCondition()
         {
             this.isActive = false;
+            (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).GraphicsEndingState = QuickTimeEventsGraphics.GraphicsEndingEnum.Won;
             this.State = QTEState.Won;
         }
 
         protected override void LoseCondition()
         {
             this.isActive = false;
+            (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).GraphicsEndingState = QuickTimeEventsGraphics.GraphicsEndingEnum.Fail;
             this.State = QTEState.Lost;          
         }
 
