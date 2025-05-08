@@ -16,11 +16,15 @@ public class PluginOptions : OptionInterface
         DisableLizzardRNG = this.config.Bind<bool>("DisableLizzardRNG", true);
         PunishFailure = this.config.Bind<bool>("PunishFailure", false, new ConfigurableInfo("If enabled, kills slugcat of the player who failed QTE. Disabled by default."));
         TimeSlowMode = this.config.Bind<string>("TimeSlowMode", "Stop");
+        timerMultiplier = this.config.Bind<float>("timerMultiplier", 1f, new ConfigAcceptableRange<float>(0.1f, 2f));
+        buttonSequenceAmmount = this.config.Bind<int>("buttonSequenceAmmount", 4, new ConfigAcceptableRange<int>(4, 20));
     }
 
     public readonly Configurable<bool> DisableLizzardRNG;
     public readonly Configurable<bool> PunishFailure;
     public readonly Configurable<string> TimeSlowMode;
+    public readonly Configurable<float> timerMultiplier;
+    public readonly Configurable<int> buttonSequenceAmmount;
     private UIelement[] UIArrGeneral;
     private static readonly string[] TimeSlowModeArr = { "Stop", "Slow" };
     OpComboBox timeSlowComboBox;
@@ -44,7 +48,11 @@ public class PluginOptions : OptionInterface
             new OpLabel(10f, 460f, "Punish QTE failure"),
             new OpCheckBox(PunishFailure, 10f, 430f){ description = PunishFailure.info.description },
             new OpLabel(10f, 400f, "Select time behavior during QTE"),
-            timeSlowComboBox
+            timeSlowComboBox,
+            new OpLabel(10f, 370f, "QTE timer multiplier"),
+            new OpFloatSlider(timerMultiplier, new Vector2(140f, 365f), 100, 1),
+            new OpLabel(10f, 340f, "Button sequence QTE buttons ammount (MOVE)"),
+            new OpUpdown(buttonSequenceAmmount, new Vector2(120f, 340f), 50f)
         };
         opTab.AddItems(UIArrGeneral);
     }

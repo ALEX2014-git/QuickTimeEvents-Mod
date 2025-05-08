@@ -19,7 +19,7 @@ namespace QTE
     {
         public QuickTimeEventsGraphics qteGraphics;
         public List<QTEAction> requiredSequence;
-        public enum QTEState { Active, Won, Lost, None }
+        public enum QTEState { Active, Won, Lost, Destroy }
         public Player player { get; protected set; }
         public Room room { get; protected set; }
         public QuickTimeEventsController controller { get; protected set; }
@@ -68,12 +68,19 @@ namespace QTE
         {
             this.player = null;
             this.controller = null;
-            this.State = QTEState.None;
+            this.qteGraphics = null;
+            this.State = QTEState.Destroy;
         }
-        protected virtual void WinCondition()
-        { }
-        protected virtual void LoseCondition()
-        { }
+
+        public virtual void Win()
+        {
+            if (this.isActive == false) return;
+        }
+
+        public virtual void Lose()
+        {
+            if (this.isActive == false) return;     
+        }
 
     }
 
@@ -102,7 +109,7 @@ namespace QTE
             QTEAction.MoveRight,
             QTEAction.MoveUp,
             QTEAction.MoveDown };
-            for (int i = 0; i < 4; i++) // Генерируем 4 кнопки, потом можно сделать настраиваемый рандом?
+            for (int i = 0; i < QTE.Instance.options.buttonSequenceAmmount.Value; i++) // Генерируем 4 кнопки, потом можно сделать настраиваемый рандом?
             {
                 this.requiredSequence.Add(possibleActions[UnityEngine.Random.Range(0, possibleActions.Length)]);
             }
@@ -110,7 +117,6 @@ namespace QTE
             {
                 $"Generated sequence: {string.Join(", ", this.requiredSequence)}"
             });
-            //QTE.Logger.LogInfo($"Generated sequence: {string.Join(", ", this.requiredSequence)}");
         }
 
         public override void Update()
@@ -133,7 +139,7 @@ namespace QTE
                     {
                         QTE.Logger.LogInfo($"Input: x={playerInput.x}, y={playerInput.y}, jmp={playerInput.jmp}, thrw={playerInput.thrw}, pckp={playerInput.pckp}");
                         //bufferFrames = 0; Don't revoke buffer frames after first succeseful input?
-                        (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).buttons[currentStep].State = QTEKey.KeyState.Completed;
+                        (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).buttons[currentStep].State = QuickTimeEventsGraphics.GraphicsPart.QTEKey.KeyState.Completed;
                         currentStep++;                       
                         player.room.PlaySound(SoundID.MENU_Karma_Ladder_Increase_Bump, player.firstChunk.pos, 1f, 3f + ((currentStep - 1) / 2f));
                         QTE.Logger.LogInfo($"Correct input! Step: {currentStep}/{requiredSequence.Count}");
@@ -147,9 +153,9 @@ namespace QTE
                         }
                         else
                         {
-                            (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).buttons[currentStep].State = QTEKey.KeyState.Failed;
+                            (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).buttons[currentStep].State = QuickTimeEventsGraphics.GraphicsPart.QTEKey.KeyState.Failed;
                             QTE.Logger.LogInfo("Wrong input! QTE failed.");
-                            this.LoseCondition();
+                            this.Lose();
                         }
                     }
                 }
@@ -157,7 +163,7 @@ namespace QTE
             else
             {
                 QTE.Logger.LogInfo("QTE completed successfully!");
-                this.WinCondition();
+                this.Win();
             }
             previousInput = playerInput;
             bufferFrames--;
@@ -169,15 +175,17 @@ namespace QTE
             base.Destroy();
         }
 
-        protected override void WinCondition()
+        public override void Win()
         {
+            base.Win();
             this.isActive = false;
             (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).GraphicsEndingState = QuickTimeEventsGraphics.GraphicsEndingEnum.Won;
             this.State = QTEState.Won;
         }
 
-        protected override void LoseCondition()
+        public override void Lose()
         {
+            base.Lose();
             this.isActive = false;
             (this.qteGraphics as QuickTimeEventButtonSequenceGraphic).GraphicsEndingState = QuickTimeEventsGraphics.GraphicsEndingEnum.Fail;
             this.State = QTEState.Lost;          

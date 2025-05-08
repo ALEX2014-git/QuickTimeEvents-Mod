@@ -22,31 +22,12 @@ namespace QTE
 
         private void Player_Update(On.Player.orig_Update orig, Player self, bool eu)
         {
-            var playerInput = self.input[0];
             if (self.GetCustomData().qtEvent != null)
             {
                 //self.GetCustomData().qtEvent.Update();
             }
-            
             orig(self, eu);
-
-            if (Input.GetKey("u") && !TESTBUTTON)
-            {
-                Logger.LogMessage("Activated NullController");
-                self.controller = new Player.NullController();
-            }
-            TESTBUTTON = Input.GetKey("u");
-
-            if (Input.GetKey("i") && !TESTBUTTON2)
-            {
-                Logger.LogMessage("Deactivated NullController");
-                self.controller = null;
-            }
-            TESTBUTTON2 = Input.GetKey("i");
         }
-
-            bool TESTBUTTON;
-            bool TESTBUTTON2;
 
 
         private float Player_DeathByBiteMultiplier(On.Player.orig_DeathByBiteMultiplier orig, Player self)

@@ -23,8 +23,9 @@ namespace QTE
         public Player targetPlayer;
         public Room room;
         public QTEvent qte;
+        public int timer;
 
-        public QuickTimeEventsController(Player player) : base()
+        public QuickTimeEventsController(Player player)
         {
             QTE.Logger.LogInfo("Creating QTEvent obj");
             this.targetPlayer = player;
@@ -37,11 +38,6 @@ namespace QTE
 
         public void Init()
         {
-            if (targetPlayer.controller == null)
-            {
-                QTE.Logger.LogInfo($"Initiated player controller");
-                //targetPlayer.controller = new Player.NullController();            
-            }
             this.CreateQTE();
             this.SlowTime();
             LockShortcuts();
@@ -50,6 +46,7 @@ namespace QTE
         public void CreateQTE()
         {
             this.qte = new ButtonSequenceQTE(this, this.targetPlayer, this.room);
+            this.timer = (int)Math.Floor(120 * QTE.Instance.options.timerMultiplier.Value);
         }
 
         public void Update()
@@ -70,7 +67,7 @@ namespace QTE
                     WonQTE();
                 }
             }
-            else if (this.dangerTimer > 120 || qte.State == QTEvent.QTEState.Lost)
+            else if (this.dangerTimer > timer || qte.State == QTEvent.QTEState.Lost)
             {
                 LostQTE();
             }
@@ -81,7 +78,7 @@ namespace QTE
         {
             for (int i = 0; i < targetPlayer.grabbedBy.Count; i++)
             {
-                QTE.Logger.LogMessage($"Iteration {i} of grabbedBy property");
+                QTE.Logger.LogMessage($"Iteration {i + 1} of grabbedBy property");
                 if (targetPlayer.grabbedBy[i] != null)
                 {
                     QTE.Logger.LogMessage($"Trying to release player");
@@ -89,6 +86,7 @@ namespace QTE
                     {
                         var crit = targetPlayer.grabbedBy[i].grabber;
                         crit.ReleaseGrasp(targetPlayer.grabbedBy[i].graspUsed);
+                        targetPlayer.stun = 0;
                         targetPlayer.room.PlaySound(SoundID.SS_AI_Give_The_Mark_Boom, crit.firstChunk.pos, 1f, 2f);
                         crit.Die();
                         qte.Destroy();
@@ -107,6 +105,7 @@ namespace QTE
         public void LostQTE()
         {
             QTE.Logger.LogInfo("QTE Failed");
+            this.qte?.Lose();
             targetPlayer.dangerGraspTime = 60;
             if (QTE.Instance.options.PunishFailure.Value) targetPlayer.Die();
             qte.Destroy();
@@ -145,7 +144,6 @@ namespace QTE
             this.targetPlayer.abstractCreature.world.game.pauseUpdate = false;
             this.qte?.Destroy();
             this.qte = null;
-            targetPlayer.controller = null;
             targetPlayer.mushroomCounter = mushroomCounterBeforeQTE;
             QTE.Logger.LogInfo($"Destroying QTEobj, owner: {this.targetPlayer}");
             targetPlayer.GetCustomData().qtEvent = null;
