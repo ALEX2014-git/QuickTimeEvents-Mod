@@ -18,6 +18,7 @@ public class PluginOptions : OptionInterface
         TimeSlowMode = this.config.Bind<string>("TimeSlowMode", "Stop");
         timerMultiplier = this.config.Bind<float>("timerMultiplier", 1f, new ConfigAcceptableRange<float>(0.1f, 2f));
         buttonSequenceAmmount = this.config.Bind<int>("buttonSequenceAmmount", 4, new ConfigAcceptableRange<int>(4, 20));
+        usePlayerColors = this.config.Bind<bool>("usePlayerColors", false, new ConfigurableInfo("QTE UI will use player slugcat's body color"));
     }
 
     public readonly Configurable<bool> DisableLizzardRNG;
@@ -25,6 +26,7 @@ public class PluginOptions : OptionInterface
     public readonly Configurable<string> TimeSlowMode;
     public readonly Configurable<float> timerMultiplier;
     public readonly Configurable<int> buttonSequenceAmmount;
+    public readonly Configurable<bool> usePlayerColors;
     private UIelement[] UIArrGeneral;
     private static readonly string[] TimeSlowModeArr = { "Stop", "Slow" };
     OpComboBox timeSlowComboBox;
@@ -51,15 +53,17 @@ public class PluginOptions : OptionInterface
             timeSlowComboBox,
             new OpLabel(10f, 370f, "QTE timer multiplier"),
             new OpFloatSlider(timerMultiplier, new Vector2(140f, 365f), 100, 1),
-            new OpLabel(10f, 340f, "Button sequence QTE buttons ammount (MOVE)"),
-            new OpUpdown(buttonSequenceAmmount, new Vector2(120f, 340f), 50f)
+            new OpLabel(10f, 340f, "Use player custom colors"),
+            new OpCheckBox(usePlayerColors, new Vector2(200f, 340f)){ description = usePlayerColors.info.description},
+            new OpLabel(10f, 310f, "Button sequence QTE buttons ammount (MOVE)"),
+            new OpUpdown(buttonSequenceAmmount, new Vector2(200f, 310f), 50f),
         };
         opTab.AddItems(UIArrGeneral);
     }
 
     public override void Update()
     {
-        
+
     }
 
 }
