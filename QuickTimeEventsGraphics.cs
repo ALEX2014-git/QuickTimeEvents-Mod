@@ -111,7 +111,7 @@ namespace QTE
             return Color.Lerp(cl, this.GetEndingColor, 0.05f);
         }
 
-        public class GraphicsPart
+        public class GraphicsPart : CosmeticSprite
         {
             public int totalSprites;
             public int firstSprite;
@@ -129,6 +129,7 @@ namespace QTE
             public Color color;
             public Color lastColor;
             public List<GraphicsPart.Line> lines;
+            public Player player;
 
             public void AddClosedPolygon(List<Vector2> vL)
             {
@@ -166,6 +167,15 @@ namespace QTE
                 this.totalSprites++;
             }
 
+            public Color ConstructColor()
+            {
+                if (QTE.Instance.options.usePlayerColors.Value)
+                {
+                    PlayerGraphics.SlugcatColor((this.player.graphicsModule as PlayerGraphics).CharacterForColor);
+                }
+                return new Color(1f, 1f, 0f);
+            }
+
             #region QTEKeys
             public class QTEKey : GraphicsPart
             {
@@ -198,6 +208,12 @@ namespace QTE
                     }
                 }
 
+                public QTEKey(Player pl)
+                {
+                    this.player = pl;
+                }
+
+
                 public class KeyboardKey : QTEKey
                 {
                     private readonly Dictionary<QTEvent.QTEAction, string> ButtonToSpriteList = new Dictionary<QTEvent.QTEAction, string>
@@ -209,15 +225,14 @@ namespace QTE
                     { QTEvent.QTEAction.PickUp, "Shift" },
                     { QTEvent.QTEAction.Throw, "X" },
                     { QTEvent.QTEAction.Jump, "Z" }
-                    };
+                    }; 
 
-                    public KeyboardKey(QTEvent.QTEAction action)
+                    public KeyboardKey(QTEvent.QTEAction action, Player pl) : base(pl)
                     {
                         this.action = action;
                         this.spriteName = ResolveSpriteName(this.action);
                         this.rotation = ResolveSpriteRotation(this.action);
-                        this.myDefaultColor = new Color(1f, 1f, 0f);
-                        
+                        this.myDefaultColor = ConstructColor();
                     }
 
                     private string ResolveSpriteName(QTEvent.QTEAction action)
@@ -252,7 +267,13 @@ namespace QTE
 
                 public class GamepadKey : QTEKey
                 {
-
+                    public GamepadKey(QTEvent.QTEAction action, Player pl) : base(pl)
+                    {
+                        this.action = action;
+                        //this.spriteName = ResolveSpriteName(this.action);
+                        //this.rotation = ResolveSpriteRotation(this.action);
+                        this.myDefaultColor = ConstructColor();
+                    }
                 }
             }
             #endregion
@@ -300,7 +321,7 @@ namespace QTE
         {
             for (int i = 0; i < qte.requiredSequence.Count; i++)
             {
-                this.buttons.Add(new QuickTimeEventsGraphics.GraphicsPart.QTEKey.KeyboardKey(qte.requiredSequence[i]));
+                this.buttons.Add(new QuickTimeEventsGraphics.GraphicsPart.QTEKey.KeyboardKey(qte.requiredSequence[i], this.player));
             }
             this.totalButtons = this.buttons.Count;
             QTE.Logger.LogInfo($"totalButtons: {this.totalButtons}");
